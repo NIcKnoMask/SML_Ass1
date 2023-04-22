@@ -30,7 +30,7 @@ class CustomDataset():
         else:
             total_data += (sample(hm_con, 450) + sample(hm_con2, 50) + sample(ma_con, 450) + sample(ma_con2, 50))
 
-        max_len = 700  # can be chanegd after
+        max_len = 700  # can be changed after
 
         # padding
         for i in range(len(total_data)):
