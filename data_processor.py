@@ -82,3 +82,41 @@ class TestSet():
 
     def __len__(self):
         return self.n_samples
+
+
+def word_distribution(path, file_name, min_frequency=3000):
+    current = json.load(open(path, encoding='utf-8'))
+    all_words = []
+    for d in current:
+        all_words += d['prompt'] + d['txt']
+
+    counts = []
+    for i in range(5000):
+        counts.append(all_words.count(i))
+
+    min_freqs = nsmallest(min_frequency, counts)
+    min_freq_words = []
+    curr_freq = None
+    for i in range(min_frequency):
+        if curr_freq is None or min_freqs[i] != curr_freq:
+            curr_freq = min_freqs[i]
+            indices = [j for j, k in enumerate(counts) if k == min_freqs[i]]
+            min_freq_words += indices
+        # min_freq_words[i] = counts.index(min_freq_words[i])
+
+
+    for c in current:
+        for p in range(len(c['prompt'])):
+            if c['prompt'][p] in min_freq_words:
+                c['prompt'][p] = -1
+        c['prompt'] = list(filter((-1).__ne__, c['prompt']))
+
+        for t in range(len(c['txt'])):
+            if c['txt'][t] in min_freq_words:
+                c['txt'][t] = -1
+        c['txt'] = list(filter((-1).__ne__, c['txt']))
+
+    with open(file_name, 'w', encoding='utf-8') as f:
+        json.dump(current, f, ensure_ascii=False, indent=4)
+
+    return min_freq_words
