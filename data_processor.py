@@ -4,49 +4,16 @@ import json
 from random import sample
 
 
-def data_loader(path):
+def load_json(path):
     with open(path, 'r') as f:
         json_data = json.load(f)
     return json_data
 
 
 class CustomDataset():
-    def __init__(self, human_path, machine_path, human_path2, machine_path2, train=True):
-        human_data = data_loader(human_path)
-        machine_data = data_loader(machine_path)
-        human_data2 = data_loader(human_path2)
-        machine_data2 = data_loader(machine_path2)
-
-        # concatenate prompt and text
-        hm_con = [h['prompt'] + h['txt'] for h in human_data]
-        ma_con = [m['prompt'] + m['txt'] for m in machine_data]
-        hm_con2 = [h['prompt'] + h['txt'] for h in human_data2]
-        ma_con2 = [m['prompt'] + m['txt'] for m in machine_data2]
-
-        # trainset or testset
-        total_data = list()
-        if train:
-            total_data += (sample(hm_con, 3500) + hm_con2 + ma_con + sample(ma_con2, 100))
-        else:
-            total_data += (sample(hm_con, 450) + sample(hm_con2, 50) + sample(ma_con, 450) + sample(ma_con2, 50))
-
-        max_len = 700  # can be changed after
-
-        # padding
-        for i in range(len(total_data)):
-            if len(total_data[i]) < max_len:
-                total_data[i] += [0] * (max_len - len(total_data[i]))
-            elif len(total_data[i]) > max_len:
-                total_data[i] = total_data[i][:max_len]
-
-        if train:
-            lab = [1] * 3600 + [0] * 3600
-        else:
-            lab = [1] * 500 + [0] * 500
-
-        self.x = torch.LongTensor(total_data)
-        self.y = lab
-        self.n_samples = len(total_data)
+    def __init__(self, domain, sample_size, train=True):
+        self.x, self.y = self.data_split(domain, sample_size, train)
+        self.n_samples = len(self.y)
 
     def __getitem__(self, index):
         return self.x[index], self.y[index]
@@ -55,9 +22,108 @@ class CustomDataset():
         return self.n_samples
 
 
+
+    @staticmethod
+    def data_split(domain, train):
+        human_data = load_json("data/set1_human.json")
+        machine_data = load_json("data/set1_machine.json")
+        human_data2 = load_json("data/set2_human.json")
+        machine_data2 = load_json("data/set2_machine.json")
+
+        max_hm1_prompt = max([len(i['prompt']) for i in human_data])
+        max_hm1_txt = max([len(i['txt']) for i in human_data])
+        max_mc1_prompt = max([len(i['prompt']) for i in machine_data])
+        max_mc1_txt = max([len(i['txt']) for i in machine_data])
+        max_hm2_prompt = max([len(i['prompt']) for i in human_data2])
+        max_hm2_txt = max([len(i['txt']) for i in human_data2])
+        max_mc2_prompt = max([len(i['prompt']) for i in machine_data2])
+        max_mc2_txt = max([len(i['txt']) for i in machine_data2])
+
+        max_domain1_prompt = max(max_hm1_prompt, max_mc1_prompt)
+        max_domain1_text = 2019
+        max_domain2_prompt = max(max_hm2_prompt, max_mc2_prompt)
+        max_domain2_text = 1496
+
+        # padding
+        for dt in human_data:
+            if len(dt['prompt']) < max_domain1_prompt:
+                dt['prompt'] += [0] * (max_domain1_prompt - len(dt['prompt']))
+            elif len(dt['prompt']) > max_domain1_prompt:
+                dt['prompt'] = dt['prompt'][:max_domain1_prompt]
+            if len(dt['txt']) < max_domain1_text:
+                dt['txt'] += [0] * (max_domain1_text - len(dt['txt']))
+            elif len(dt['txt']) > max_domain1_text:
+                dt['txt'] = dt['txt'][:max_domain1_text]
+
+        for dt in machine_data:
+            if len(dt['prompt']) < max_domain1_prompt:
+                dt['prompt'] += [0] * (max_domain1_prompt - len(dt['prompt']))
+            elif len(dt['prompt']) > max_domain1_prompt:
+                dt['prompt'] = dt['prompt'][:max_domain1_prompt]
+            if len(dt['txt']) < max_domain1_text:
+                dt['txt'] += [0] * (max_domain1_text - len(dt['txt']))
+            elif len(dt['txt']) > max_domain1_text:
+                dt['txt'] = dt['txt'][:max_domain1_text]
+
+        for dt in human_data2:
+            if len(dt['prompt']) < max_domain2_prompt:
+                dt['prompt'] += [0] * (max_domain2_prompt - len(dt['prompt']))
+            elif len(dt['txt']) > max_domain2_prompt:
+                dt['prompt'] = dt['prompt'][:max_domain2_prompt]
+
+            if len(dt['txt']) < max_domain2_text:
+                dt['txt'] += [0] * (max_domain2_text - len(dt['txt']))
+            elif len(dt['txt']) > max_domain2_text:
+                dt['txt'] = dt['txt'][:max_domain2_text]
+
+        for dt in machine_data2:
+            if len(dt['prompt']) < max_domain2_prompt:
+                dt['prompt'] += [0] * (max_domain2_prompt - len(dt['prompt']))
+            elif len(dt['prompt']) > max_domain2_prompt:
+                dt['prompt'] = dt['prompt'][:max_domain2_prompt]
+
+            if len(dt['txt']) < max_domain2_text:
+                dt['txt'] += [0] * (max_domain2_text - len(dt['txt']))
+            elif len(dt['txt']) > max_domain2_text:
+                dt['txt'] = dt['txt'][:max_domain2_text]
+
+        hm_domain1 = [h['prompt'] + [1] + h['txt'] for h in human_data]
+        mc_domain1 = [m['prompt'] + [1] + m['txt'] for m in machine_data]
+        hm_domain2 = [h['prompt'] + [1] + h['txt'] for h in human_data2]
+        mc_domain2_id0 = [m['prompt'] + [1] + m['txt'] for m in machine_data2]
+
+        # random sampling data from each parts
+        total_data = []
+        HM1_SIZE, MC1_SIZE, MH2_SIZE, MC2_SIZE = sample_size[0], sample_size[1], sample_size[2], sample_size[3]
+        if train:
+            if domain == 1:  # domain 1 data
+                total_data += (sample(hm_domain1, HM1_SIZE) + mc_domain1)
+            elif domain == 2:  # domain 2 data
+                total_data += hm_domain2 + sample(mc_domain2_id0, MC2_SIZE)
+        else:  # test data
+            if domain == 1:
+                total_data += (sample(hm_domain1, 500) + sample(mc_domain1, 500))
+            elif domain == 2:
+                total_data += (sample(hm_domain2, 100) + sample(mc_domain2_id0, 100))
+
+        labels = []
+        if train:
+            if domain == 1:
+                labels += [1] * 3500 + [0] * 3500
+            else:
+                labels += [1] * 100 + [0] * 100
+        else:
+            if domain == 1:
+                labels += [1] * 500 + [0] * 500
+            else:
+                labels += [1] * 100 + [0] * 100
+
+        return torch.LongTensor(total_data), labels
+
+
 class TestSet():
     def __init__(self, data_path):
-        data = data_loader(data_path)
+        data = load_json(data_path)
 
         # concatenate prompt and text
         total_data = [d['prompt'] + d['txt'] for d in data]
