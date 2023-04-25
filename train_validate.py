@@ -89,8 +89,8 @@ machine_path2 = "data/set2_machine.json"
 test_path = "data/test.json"
 
 # train and validate dataset and test set
-train_data = CustomDataset(human_path, machine_path, human_path2, machine_path2)
-validate_data = CustomDataset(human_path, machine_path, human_path2, machine_path2, train=False)
+train_data = CustomDataset(1, [3500, 3500, 100, 100], train=True)
+validate_data = CustomDataset(1, [3500, 3500, 100, 100], train=False)
 
 train_loader = torch.utils.data.DataLoader(train_data, batch_size=32, shuffle=True)
 validate_loader = torch.utils.data.DataLoader(validate_data, batch_size=32, shuffle=False)

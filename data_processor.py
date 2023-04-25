@@ -2,6 +2,7 @@ import torch
 import pandas as pd
 import json
 from random import sample
+from heapq import nsmallest
 
 
 def load_json(path):
@@ -24,7 +25,7 @@ class CustomDataset():
 
 
     @staticmethod
-    def data_split(domain, train):
+    def data_split(domain, sample_size, train):
         human_data = load_json("data/set1_human.json")
         machine_data = load_json("data/set1_machine.json")
         human_data2 = load_json("data/set2_human.json")
@@ -109,9 +110,9 @@ class CustomDataset():
         labels = []
         if train:
             if domain == 1:
-                labels += [1] * 3500 + [0] * 3500
+                labels += [1] * HM1_SIZE + [0] * 3500
             else:
-                labels += [1] * 100 + [0] * 100
+                labels += [1] * 100 + [0] * MC2_SIZE
         else:
             if domain == 1:
                 labels += [1] * 500 + [0] * 500
