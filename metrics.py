@@ -1,6 +1,8 @@
 import torch
 import time
 from torchmetrics.classification import BinaryRecall, BinaryPrecision, BinaryConfusionMatrix
+from scipy.signal import savgol_filter  # Smooth spiky curves
+import matplotlib.pyplot as plt
 
 
 def validate(model, criterion, test_loader):
@@ -92,3 +94,13 @@ def evaluation(test_data, model):
     valid_accuracy, valid_precision, valid_recall, valid_conf_matrix, valid_loss = validate(model, criterion, test_data)
     print(f'test accuracy: {valid_accuracy} | test precision: {valid_precision} | test recall: {valid_recall}')
     print(valid_conf_matrix)
+
+
+def visualize_loss(loss):
+    smooth_loss = savgol_filter(loss, 21, 3)
+    plt.rcParams['figure.dpi'] = 128
+
+    plt.plot(smooth_loss, label='Conv Net')
+    plt.xlabel('Iterations')
+    plt.ylabel('Cross-entropy Loss (Train)')
+    plt.legend()
