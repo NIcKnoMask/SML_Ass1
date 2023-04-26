@@ -1,10 +1,6 @@
 import torch
 import time
-import pandas as pd
 from torchmetrics.classification import BinaryRecall, BinaryPrecision, BinaryConfusionMatrix
-from data_processor import CustomDataset
-from data_processor import TestSet
-from GateCNN import GateCNN
 
 
 def validate(model, criterion, test_loader):
