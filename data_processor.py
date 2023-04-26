@@ -12,7 +12,7 @@ def load_json(path):
 
 
 class CustomDataset():
-    def __init__(self, domain, sample_size, train=True):
+    def __init__(self, domain, sample_size=[3500, 3500, 100, 100], train=True):
         self.x, self.y = self.data_split(domain, sample_size, train)
         self.n_samples = len(self.y)
 
@@ -21,8 +21,6 @@ class CustomDataset():
 
     def __len__(self):
         return self.n_samples
-
-
 
     @staticmethod
     def data_split(domain, sample_size, train):
@@ -123,20 +121,28 @@ class CustomDataset():
 
 
 class TestSet():
-    def __init__(self, data_path):
-        data = load_json(data_path)
+    def __init__(self, domain):
+        data = load_json("data/test.json")
+
+        max_prompt = 105
+        max_text = 2019
+
+        for dt in data:
+            if len(dt['prompt']) < max_prompt:
+                dt['prompt'] += [0] * (max_prompt - len(dt['prompt']))
+            elif len(dt['prompt']) > max_prompt:
+                dt['prompt'] = dt['prompt'][:max_prompt]
+            if len(dt['txt']) < max_text:
+                dt['txt'] += [0] * (max_text - len(dt['txt']))
+            elif len(dt['txt']) > max_text:
+                dt['txt'] = dt['txt'][:max_text]
 
         # concatenate prompt and text
-        total_data = [d['prompt'] + d['txt'] for d in data]
-
-        max_len = 500  # can be chanegd after
-
-        # padding
-        for i in range(len(total_data)):
-            if len(total_data[i]) < max_len:
-                total_data[i] += [0] * (max_len - len(total_data[i]))
-            elif len(total_data[i]) > max_len:
-                total_data[i] = total_data[i][:max_len]
+        total_data = [d['prompt'] + [1] + d['txt'] for d in data]
+        if domain == 1:
+            total_data = total_data[:600]
+        else:
+            total_data = total_data[600:]
 
         lab = [0] * len(total_data)
 
@@ -170,7 +176,6 @@ def word_distribution(path, file_name, min_frequency=3000):
             indices = [j for j, k in enumerate(counts) if k == min_freqs[i]]
             min_freq_words += indices
         # min_freq_words[i] = counts.index(min_freq_words[i])
-
 
     for c in current:
         for p in range(len(c['prompt'])):

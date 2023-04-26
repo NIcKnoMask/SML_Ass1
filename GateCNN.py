@@ -1,15 +1,11 @@
-import pandas as pd
-import json
-from random import sample
-import time
-import os
 import torch
 import torch.nn as nn
 
 
-class Conv1dModel(nn.Module):
-    def __init__(self, vocab_size, embedding_dim=32, n_class=2):
-        super(Conv1dModel, self).__init__()
+# Try a Gate Convolutional Neural network
+class GateCNN(nn.Module):
+    def __init__(self, vocab_size=5000, embedding_dim=32, n_class=2):
+        super(GateCNN, self).__init__()
 
         # Embedding table
         self.embedding_table = nn.Embedding(vocab_size, embedding_dim)

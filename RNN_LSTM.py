@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class LSTM(nn.Module):
-    def __init__(self, vocab_size, embedding_dim=64, hidden_dim=128, layer_dim=2, num_classes=2):
+    def __init__(self, vocab_size=5000, embedding_dim=64, hidden_dim=128, layer_dim=2, num_classes=2):
         super(LSTM, self).__init__()
 
         self.embedding_table = nn.Embedding(vocab_size, embedding_dim)
